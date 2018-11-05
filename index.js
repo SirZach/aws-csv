@@ -10,7 +10,13 @@ const transformer = new RecordTransformStream();
 initOutputFile(outputFile, columns);
 generateCSV('data', outputFile);
 
+/**
+ * Generate the csv file from the directory of gzipped files
+ * @param {string} dir 
+ * @param {file path} outputFile 
+ */
 function generateCSV(dir='data', outputFile) {
+  // TODO: stream stdout instead of having to increase the max-buffer
   execFile('find', [`${dir}/`], { maxBuffer: 1024*5000 })
     .then((response) => {
       const gzippedFilePaths = response.stdout
@@ -25,7 +31,6 @@ function generateCSV(dir='data', outputFile) {
           .pipe(JSONStream.parse('Records'))
           .pipe(transformer)
           .pipe(fs.createWriteStream(outputFile))
-          .on('finish', () => console.log('Done'))
           .on('error', (e) => console.log('error'));
       });
     })

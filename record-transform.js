@@ -16,7 +16,6 @@ class RecordTransformStream extends Transform {
       super({ objectMode: true });
 
       this._firstRecord = true;
-      this._numberOfFiles = 0;
       this._csvStringifier = createCsvStringifier({
         header: columns.map(c => {
           return { id: c, title: c };
@@ -24,6 +23,10 @@ class RecordTransformStream extends Transform {
       });
   }
 
+  /**
+   * Create the CSV line object from the record in the log file
+   * @param {dict} record 
+   */
   format(record) {
     return {
       userIdentityType: record.userIdentity.type,
@@ -37,16 +40,25 @@ class RecordTransformStream extends Transform {
     };
   }
 
+  /**
+   * User name seems to be flaky...
+   * @param {dict} record 
+   */
   getUserName(record) {
     return record.userIdentity.sessionContext && record.userIdentity.sessionContext.sessionIssuer ? 
       record.userIdentity.sessionContext.sessionIssuer.userName : 
       '';
   }
 
+  /**
+   * Required function to implement for a Transform stream
+   * @param {[dict]} records 
+   * @param {*} encoding 
+   * @param {fn} callback 
+   */
   _transform(records, encoding, callback) {
-    this._numberOfFiles++;
-    console.log(this._numberOfFiles);
     const recordLine = this._csvStringifier.stringifyRecords(records.map(this.format.bind(this)));
+
     if (this._firstRecord) {
         this._firstRecord = false;
         callback(null, this._csvStringifier.getHeaderString() + recordLine);
